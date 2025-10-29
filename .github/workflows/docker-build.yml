@@ -1,11 +1,28 @@
 name: Docker Build Test
 
-on: [push]
+on: [push, pull_request]
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build Docker Image
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build Docker image
         run: docker build -t mlops-demo .
+
+      - name: Run Container & Generate Model
+        run: |
+          mkdir -p volume
+          docker run --rm -v "$(pwd)/volume:/app/volume" mlops-demo
+
+      - name: Test Model File
+        run: |
+          if [ -f "volume/timeseries_model.pkl" ]; then
+            echo "✓ Model file generated successfully!"
+            ls -la volume/
+          else
+            echo "✗ Model file not found!"
+            exit 1
+          fi
